@@ -168,6 +168,80 @@ Resposta de credenciais invalidas:
 }
 ```
 
+### POST `/api/v1/auth/forgot-password`
+
+Solicita um codigo de recuperacao de senha.
+
+Requisicao:
+
+```json
+{
+  "email": "usuario@email.com"
+}
+```
+
+Resposta:
+
+```json
+{
+  "success": true,
+  "message": "Se o e-mail existir, enviaremos um codigo de recuperacao"
+}
+```
+
+Observacao: nesta etapa de desenvolvimento o codigo aparece no log da aplicacao. Exemplo:
+
+```text
+Codigo de recuperacao de senha para usuario@email.com: 483921
+```
+
+### POST `/api/v1/auth/verify-reset-code`
+
+Valida se o codigo de recuperacao ainda esta correto e dentro do prazo.
+
+Requisicao:
+
+```json
+{
+  "email": "usuario@email.com",
+  "code": "483921"
+}
+```
+
+Resposta:
+
+```json
+{
+  "success": true,
+  "message": "Codigo valido"
+}
+```
+
+### POST `/api/v1/auth/reset-password`
+
+Define uma nova senha usando o codigo de recuperacao.
+
+Requisicao:
+
+```json
+{
+  "email": "usuario@email.com",
+  "code": "483921",
+  "newPassword": "novaSenha123"
+}
+```
+
+Resposta:
+
+```json
+{
+  "success": true,
+  "message": "Senha alterada com sucesso"
+}
+```
+
+Codigos de recuperacao expiram em 15 minutos, sao salvos com hash BCrypt e sao invalidados apos o uso.
+
 ## Contrato de seguranca atual
 
 - `/api/v1/auth/login` esta publico.

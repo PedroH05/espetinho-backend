@@ -1,9 +1,12 @@
 package com.espetinho.api.auth.controller;
 
+import com.espetinho.api.auth.dto.ForgotPasswordRequest;
 import com.espetinho.api.auth.dto.LoginRequest;
 import com.espetinho.api.auth.dto.LoginResponse;
 import com.espetinho.api.auth.dto.RegisterRequest;
 import com.espetinho.api.auth.dto.RegisterResponse;
+import com.espetinho.api.auth.dto.ResetPasswordRequest;
+import com.espetinho.api.auth.dto.VerifyResetCodeRequest;
 import com.espetinho.api.auth.service.AuthService;
 import com.espetinho.api.common.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -36,5 +39,26 @@ public class AuthController {
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse response = authService.login(request);
         return ResponseEntity.ok(ApiResponse.success("Login realizado com sucesso", response));
+    }
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "Solicitar recuperacao de senha", description = "Gera um codigo de recuperacao para o e-mail informado.")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request);
+        return ResponseEntity.ok(ApiResponse.<Void>success("Se o e-mail existir, enviaremos um codigo de recuperacao", null));
+    }
+
+    @PostMapping("/verify-reset-code")
+    @Operation(summary = "Validar codigo de recuperacao", description = "Verifica se o codigo de recuperacao ainda esta valido.")
+    public ResponseEntity<ApiResponse<Void>> verifyResetCode(@Valid @RequestBody VerifyResetCodeRequest request) {
+        authService.verifyResetCode(request);
+        return ResponseEntity.ok(ApiResponse.<Void>success("Codigo valido", null));
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Redefinir senha", description = "Atualiza a senha usando um codigo de recuperacao valido.")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.<Void>success("Senha alterada com sucesso", null));
     }
 }

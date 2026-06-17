@@ -1,10 +1,15 @@
 package com.espetinho.api.auth.service;
 
+import com.espetinho.api.auth.dto.ForgotPasswordRequest;
 import com.espetinho.api.auth.dto.AuthenticatedUserResponse;
 import com.espetinho.api.auth.dto.LoginRequest;
 import com.espetinho.api.auth.dto.LoginResponse;
 import com.espetinho.api.auth.dto.RegisterRequest;
 import com.espetinho.api.auth.dto.RegisterResponse;
+import com.espetinho.api.auth.dto.ResetPasswordRequest;
+import com.espetinho.api.auth.dto.VerifyResetCodeRequest;
+import com.espetinho.api.auth.enums.VerificationTokenType;
+import com.espetinho.api.auth.token.VerificationTokenService;
 import com.espetinho.api.common.exception.BusinessException;
 import com.espetinho.api.security.JwtService;
 import com.espetinho.api.user.entity.User;
@@ -27,6 +32,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final VerificationTokenService verificationTokenService;
 
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
@@ -87,7 +93,43 @@ public class AuthService {
         );
     }
 
+    @Transactional
+    public void forgotPassword(ForgotPasswordRequest request) {
+        String email = normalizeEmail(request.email());
+        userRepository.findByEmail(email)
+                .filter(User::isActive)
+                .ifPresent(verificationTokenService::createPasswordResetCode);
+    }
+
+    @Transactional(readOnly = true)
+    public void verifyResetCode(VerifyResetCodeRequest request) {
+        verificationTokenService.validateCode(
+                normalizeEmail(request.email()),
+                VerificationTokenType.PASSWORD_RESET,
+                request.code()
+        );
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        String email = normalizeEmail(request.email());
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(this::invalidResetCode);
+
+        verificationTokenService.consumeCode(email, VerificationTokenType.PASSWORD_RESET, request.code());
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+    }
+
     private BusinessException invalidCredentials() {
         return new BusinessException(INVALID_CREDENTIALS_MESSAGE, HttpStatus.UNAUTHORIZED);
+    }
+
+    private BusinessException invalidResetCode() {
+        return new BusinessException("Codigo invalido ou expirado", HttpStatus.BAD_REQUEST);
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 }

@@ -24,6 +24,18 @@ spring:
     port: ${MAIL_PORT:1025}
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:google-client-id-not-configured}
+            client-secret: ${GOOGLE_CLIENT_SECRET:google-client-secret-not-configured}
+            scope:
+              - openid
+              - email
+              - profile
+            redirect-uri: "{baseUrl}/api/v1/auth/google/callback/{registrationId}"
 
 springdoc:
   api-docs:
@@ -34,6 +46,10 @@ springdoc:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+  frontend:
+    base-url: ${FRONTEND_BASE_URL:http://localhost:3000}
+    google-success-path: ${GOOGLE_SUCCESS_PATH:/auth/google/callback}
+    google-failure-path: ${GOOGLE_FAILURE_PATH:/login}
   security:
     jwt:
       secret: ${JWT_SECRET:change-this-development-secret-key-with-at-least-32-characters}

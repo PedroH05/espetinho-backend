@@ -44,6 +44,11 @@ DB_PASSWORD=postgres
 JWT_SECRET=troque-por-uma-chave-segura-com-no-minimo-32-caracteres
 JWT_EXPIRATION_MS=86400000
 CORS_ALLOWED_ORIGINS=http://localhost:3000
+GOOGLE_CLIENT_ID=client-id-do-google
+GOOGLE_CLIENT_SECRET=client-secret-do-google
+FRONTEND_BASE_URL=http://localhost:3000
+GOOGLE_SUCCESS_PATH=/auth/google/callback
+GOOGLE_FAILURE_PATH=/login
 ```
 
 ## Executar
@@ -71,6 +76,11 @@ DB_PASSWORD=senha-do-banco
 JWT_SECRET=troque-por-uma-chave-segura-com-no-minimo-32-caracteres
 JWT_EXPIRATION_MS=86400000
 CORS_ALLOWED_ORIGINS=http://localhost:3000
+GOOGLE_CLIENT_ID=client-id-do-google
+GOOGLE_CLIENT_SECRET=client-secret-do-google
+FRONTEND_BASE_URL=http://localhost:3000
+GOOGLE_SUCCESS_PATH=/auth/google/callback
+GOOGLE_FAILURE_PATH=/login
 ```
 
 O Render define a variavel `PORT` automaticamente. A aplicacao ja esta preparada para usar essa porta em producao e continuar usando `8080` localmente.
@@ -244,12 +254,193 @@ Codigos de recuperacao expiram em 15 minutos, sao salvos com hash BCrypt e sao i
 
 Observacao: recuperacao de senha e permitida apenas para usuarios com `authProvider=LOCAL`. Usuarios criados por login Google terao autenticacao gerenciada pelo Google.
 
+### GET `/api/v1/auth/google`
+
+Inicia o login com Google. Esta rota deve ser aberta pelo navegador, nao pelo Axios.
+
+Fluxo:
+
+1. Frontend redireciona o usuario para:
+
+```text
+GET /api/v1/auth/google
+```
+
+2. Backend redireciona para o Google.
+3. Google retorna para o callback tecnico do backend:
+
+```text
+/api/v1/auth/google/callback/google
+```
+
+4. Backend cria ou atualiza o usuario, gera o JWT e redireciona para o frontend:
+
+```text
+http://localhost:3000/auth/google/callback#token=jwt_aqui
+```
+
+Em producao, configure no Google Cloud o redirect URI:
+
+```text
+https://espetinho-backend.onrender.com/api/v1/auth/google/callback/google
+```
+
+Em desenvolvimento local:
+
+```text
+http://localhost:8080/api/v1/auth/google/callback/google
+```
+
+### GET `/api/v1/categories`
+
+Lista categorias ativas para montar filtros no cardapio.
+
+Resposta:
+
+```json
+{
+  "success": true,
+  "message": "Categorias consultadas com sucesso",
+  "data": [
+    {
+      "id": "uuid-da-categoria",
+      "name": "Espetinhos",
+      "slug": "espetinhos",
+      "displayOrder": 1
+    }
+  ]
+}
+```
+
+### GET `/api/v1/products`
+
+Lista o cardapio publico. Por padrao retorna apenas produtos ativos e disponiveis.
+
+Parametros opcionais:
+
+```text
+search=carne
+categoryId=uuid-da-categoria
+available=true
+```
+
+Exemplos:
+
+```text
+GET /api/v1/products
+GET /api/v1/products?search=carne
+GET /api/v1/products?categoryId=uuid-da-categoria
+GET /api/v1/products?search=carne&categoryId=uuid-da-categoria
+```
+
+Resposta:
+
+```json
+{
+  "success": true,
+  "message": "Cardapio consultado com sucesso",
+  "data": {
+    "categories": [
+      {
+        "id": "uuid-da-categoria",
+        "name": "Espetinhos",
+        "slug": "espetinhos",
+        "displayOrder": 1
+      }
+    ],
+    "products": [
+      {
+        "id": "uuid-do-produto",
+        "name": "Espetinho de Carne",
+        "description": "Espetinho de carne bovina temperada",
+        "price": 9.90,
+        "category": {
+          "id": "uuid-da-categoria",
+          "name": "Espetinhos",
+          "slug": "espetinhos",
+          "displayOrder": 1
+        },
+        "imageUrls": [],
+        "available": true,
+        "stockQuantity": 20
+      }
+    ]
+  }
+}
+```
+
+### GET `/api/v1/products/{id}`
+
+Busca um produto ativo pelo ID.
+
+### POST `/api/v1/products`
+
+Cria um produto. Exige token de usuario `ADMIN`.
+
+Requisicao:
+
+```json
+{
+  "name": "Espetinho de Carne",
+  "description": "Espetinho de carne bovina temperada",
+  "price": 9.90,
+  "categoryId": "uuid-da-categoria",
+  "imageUrls": [],
+  "available": true,
+  "stockQuantity": 20
+}
+```
+
+### PUT `/api/v1/products/{id}`
+
+Atualiza um produto. Exige token de usuario `ADMIN`.
+
+### PATCH `/api/v1/products/{id}/deactivate`
+
+Marca o produto como indisponivel temporariamente (`available=false`). Exige token de usuario `ADMIN`.
+
+### PATCH `/api/v1/products/{id}/activate`
+
+Restaura o produto e marca como disponivel (`active=true` e `available=true`). Exige token de usuario `ADMIN`.
+
+### DELETE `/api/v1/products/{id}`
+
+Remove o produto usando soft delete (`active=false`). O registro continua no banco para permitir recuperacao. Exige token de usuario `ADMIN`.
+
+Categoria e produto de teste para inserir pelo DBeaver ou Neon:
+
+```sql
+INSERT INTO categories (id, name, slug, active, display_order)
+VALUES (
+    '22222222-2222-2222-2222-222222222222',
+    'Espetinhos',
+    'espetinhos',
+    true,
+    1
+);
+
+INSERT INTO products (id, name, description, price, category_id, available, active, stock_quantity)
+VALUES (
+    '11111111-1111-1111-1111-111111111111',
+    'Espetinho de Carne',
+    'Espetinho de carne bovina temperada',
+    9.90,
+    '22222222-2222-2222-2222-222222222222',
+    true,
+    true,
+    20
+);
+```
+
 ## Contrato de seguranca atual
 
 - `/api/v1/auth/login` esta publico.
+- `/api/v1/auth/google` inicia o login com Google.
 - `/api/v1/admin/**` exige role `ADMIN`.
 - `/api/v1/staff/**` aceita `STAFF` ou `ADMIN`.
+- `GET /api/v1/categories/**` fica publico para filtros do cardapio.
 - `GET /api/v1/products/**` fica publico para o cardapio.
+- Escrita em `/api/v1/products/**` exige role `ADMIN`.
 - Demais rotas exigem JWT valido no header `Authorization: Bearer <token>`.
 
 ## Usuario para teste manual

@@ -1,11 +1,7 @@
-package com.espetinho.api.user.entity;
+package com.espetinho.api.category.entity;
 
-import com.espetinho.api.user.enums.UserAuthProvider;
-import com.espetinho.api.user.enums.UserRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -27,41 +23,24 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "users")
-public class User {
+@Table(name = "categories")
+public class Category {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, length = 120)
+    @Column(nullable = false, unique = true, length = 80)
     private String name;
 
-    @Column(nullable = false, unique = true, length = 180)
-    private String email;
-
-    @Column(name = "password_hash")
-    private String passwordHash;
-
-    @Column(name = "avatar_url", length = 500)
-    private String avatarUrl;
-
-    @Column(name = "google_id", length = 120)
-    private String googleId;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "auth_provider", nullable = false, length = 20)
-    private UserAuthProvider authProvider;
-
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private UserRole role;
+    @Column(nullable = false, length = 100)
+    private String slug;
 
     @Column(nullable = false)
     private boolean active;
 
-    @Column(name = "email_verified", nullable = false)
-    private boolean emailVerified;
+    @Column(name = "display_order", nullable = false)
+    private int displayOrder;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;

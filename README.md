@@ -58,6 +58,23 @@ Swagger:
 http://localhost:8080/swagger-ui.html
 ```
 
+## Deploy no Render com Docker
+
+No Render, crie um `Web Service` usando o repositorio do GitHub e selecione `Docker` como runtime.
+
+Variaveis de ambiente necessarias no Render:
+
+```env
+DB_URL=jdbc:postgresql://host-do-banco:5432/nome-do-banco
+DB_USERNAME=usuario-do-banco
+DB_PASSWORD=senha-do-banco
+JWT_SECRET=troque-por-uma-chave-segura-com-no-minimo-32-caracteres
+JWT_EXPIRATION_MS=86400000
+CORS_ALLOWED_ORIGINS=http://localhost:3000
+```
+
+O Render define a variavel `PORT` automaticamente. A aplicacao ja esta preparada para usar essa porta em producao e continuar usando `8080` localmente.
+
 ## Endpoint implementado
 
 ### POST `/api/v1/auth/register`

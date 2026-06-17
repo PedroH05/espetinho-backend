@@ -242,6 +242,8 @@ Resposta:
 
 Codigos de recuperacao expiram em 15 minutos, sao salvos com hash BCrypt e sao invalidados apos o uso.
 
+Observacao: recuperacao de senha e permitida apenas para usuarios com `authProvider=LOCAL`. Usuarios criados por login Google terao autenticacao gerenciada pelo Google.
+
 ## Contrato de seguranca atual
 
 - `/api/v1/auth/login` esta publico.

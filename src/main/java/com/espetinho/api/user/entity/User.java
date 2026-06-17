@@ -1,5 +1,6 @@
 package com.espetinho.api.user.entity;
 
+import com.espetinho.api.user.enums.UserAuthProvider;
 import com.espetinho.api.user.enums.UserRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -44,6 +45,10 @@ public class User {
 
     @Column(name = "avatar_url", length = 500)
     private String avatarUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "auth_provider", nullable = false, length = 20)
+    private UserAuthProvider authProvider;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

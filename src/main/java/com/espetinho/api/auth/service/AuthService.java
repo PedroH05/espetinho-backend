@@ -13,6 +13,7 @@ import com.espetinho.api.auth.token.VerificationTokenService;
 import com.espetinho.api.common.exception.BusinessException;
 import com.espetinho.api.security.JwtService;
 import com.espetinho.api.user.entity.User;
+import com.espetinho.api.user.enums.UserAuthProvider;
 import com.espetinho.api.user.enums.UserRole;
 import com.espetinho.api.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +47,7 @@ public class AuthService {
                 .name(request.name().trim())
                 .email(email)
                 .passwordHash(passwordEncoder.encode(request.password()))
+                .authProvider(UserAuthProvider.LOCAL)
                 .role(UserRole.CLIENT)
                 .active(true)
                 .emailVerified(true)
@@ -98,6 +100,7 @@ public class AuthService {
         String email = normalizeEmail(request.email());
         userRepository.findByEmail(email)
                 .filter(User::isActive)
+                .filter(user -> user.getAuthProvider() == UserAuthProvider.LOCAL)
                 .ifPresent(verificationTokenService::createPasswordResetCode);
     }
 
@@ -115,6 +118,10 @@ public class AuthService {
         String email = normalizeEmail(request.email());
         User user = userRepository.findByEmail(email)
                 .orElseThrow(this::invalidResetCode);
+
+        if (user.getAuthProvider() != UserAuthProvider.LOCAL) {
+            throw invalidResetCode();
+        }
 
         verificationTokenService.consumeCode(email, VerificationTokenType.PASSWORD_RESET, request.code());
         user.setPasswordHash(passwordEncoder.encode(request.newPassword()));

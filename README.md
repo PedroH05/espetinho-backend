@@ -136,6 +136,29 @@ Resposta de sucesso:
 }
 ```
 
+### GET `/api/v1/users/me`
+
+Requisicao:
+
+```text
+Authorization: Bearer <token>
+```
+
+Resposta de sucesso:
+
+```json
+{
+  "success": true,
+  "message": "Usuario autenticado",
+  "data": {
+    "id": "uuid-do-usuario",
+    "name": "Pedro Henrique",
+    "email": "usuario@email.com",
+    "role": "CLIENT"
+  }
+}
+```
+
 Resposta de credenciais invalidas:
 
 ```json

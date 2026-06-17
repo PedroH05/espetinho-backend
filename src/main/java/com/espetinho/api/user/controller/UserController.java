@@ -2,15 +2,19 @@ package com.espetinho.api.user.controller;
 
 import com.espetinho.api.common.dto.ApiResponse;
 import com.espetinho.api.security.CustomUserPrincipal;
+import com.espetinho.api.user.dto.UpdateUserProfileRequest;
 import com.espetinho.api.user.dto.UserProfileResponse;
 import com.espetinho.api.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,5 +37,19 @@ public class UserController {
     ) {
         UserProfileResponse response = userService.getAuthenticatedUser(principal);
         return ResponseEntity.ok(ApiResponse.success("Usuario autenticado", response));
+    }
+
+    @PutMapping("/me")
+    @Operation(
+            summary = "Atualizar perfil",
+            description = "Atualiza os dados basicos do usuario autenticado.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<ApiResponse<UserProfileResponse>> updateMe(
+            @AuthenticationPrincipal CustomUserPrincipal principal,
+            @Valid @RequestBody UpdateUserProfileRequest request
+    ) {
+        UserProfileResponse response = userService.updateAuthenticatedUser(principal, request);
+        return ResponseEntity.ok(ApiResponse.success("Perfil atualizado com sucesso", response));
     }
 }

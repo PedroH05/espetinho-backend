@@ -37,7 +37,7 @@ public class JwtService {
                 .expiration(Date.from(now.plusMillis(expirationMs)))
                 .claim("userId", user.getId().toString())
                 .claim("name", user.getName())
-                .claim("role", user.getRole().name())
+                .claim("roles", user.getRoles().stream().map(Enum::name).toList())
                 .signWith(getSigningKey())
                 .compact();
     }

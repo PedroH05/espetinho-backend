@@ -109,13 +109,15 @@ Resposta de sucesso:
     "id": "uuid-do-usuario",
     "name": "Pedro Henrique",
     "email": "usuario@email.com",
-    "role": "CLIENT",
+    "roles": ["CLIENT"],
     "emailVerified": true
   }
 }
 ```
 
 Observacao: nesta etapa de desenvolvimento o usuario nasce com `emailVerified=true` para facilitar os testes do frontend. Antes de producao, isso deve voltar para `false` junto com a implementacao da validacao de e-mail.
+
+Observacao sobre permissoes: a API retorna `roles` como array porque um usuario pode ter mais de uma funcao no futuro. Exemplo de funcionario de caixa: `["STAFF", "CASHIER"]`.
 
 ### POST `/api/v1/auth/login`
 
@@ -140,7 +142,7 @@ Resposta de sucesso:
       "id": "uuid-do-usuario",
       "name": "Pedro Henrique",
       "email": "usuario@email.com",
-      "role": "CLIENT"
+      "roles": ["CLIENT"]
     }
   }
 }
@@ -164,7 +166,7 @@ Resposta de sucesso:
     "id": "uuid-do-usuario",
     "name": "Pedro Henrique",
     "email": "usuario@email.com",
-    "role": "CLIENT"
+    "roles": ["CLIENT"]
   }
 }
 ```
@@ -436,30 +438,42 @@ VALUES (
 
 - `/api/v1/auth/login` esta publico.
 - `/api/v1/auth/google` inicia o login com Google.
-- `/api/v1/admin/**` exige role `ADMIN`.
+- `/api/v1/admin/**` exige `ADMIN` dentro de `roles`.
 - `/api/v1/staff/**` aceita `STAFF` ou `ADMIN`.
 - `GET /api/v1/categories/**` fica publico para filtros do cardapio.
 - `GET /api/v1/products/**` fica publico para o cardapio.
-- Escrita em `/api/v1/products/**` exige role `ADMIN`.
+- Escrita em `/api/v1/products/**` exige `ADMIN` dentro de `roles`.
 - Demais rotas exigem JWT valido no header `Authorization: Bearer <token>`.
 
 ## Usuario para teste manual
 
-Enquanto o cadastro ainda nao foi implementado, insira um usuario diretamente no banco usando uma senha BCrypt gerada pela aplicacao ou por uma ferramenta confiavel.
+Para criar um usuario manualmente no banco, use uma senha BCrypt gerada pela aplicacao ou por uma ferramenta confiavel.
 
 Exemplo de insert, substituindo `password_hash` por um hash BCrypt real:
 
 ```sql
-INSERT INTO users (id, name, email, password_hash, role, active, email_verified)
+INSERT INTO users (id, name, email, password_hash, active, email_verified)
 VALUES (
     '00000000-0000-0000-0000-000000000001',
     'Pedro Henrique',
     'usuario@email.com',
     '$2a$10$substitua_por_um_hash_bcrypt_real',
-    'CLIENT',
     true,
     true
 );
+
+INSERT INTO user_roles (user_id, role)
+VALUES ('00000000-0000-0000-0000-000000000001', 'CLIENT');
+```
+
+Para transformar um usuario existente em administrador:
+
+```sql
+INSERT INTO user_roles (user_id, role)
+SELECT id, 'ADMIN'
+FROM users
+WHERE email = 'usuario@email.com'
+ON CONFLICT (user_id, role) DO NOTHING;
 ```
 
 ## Proximas etapas sugeridas

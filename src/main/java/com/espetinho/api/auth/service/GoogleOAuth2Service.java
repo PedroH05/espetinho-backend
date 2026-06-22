@@ -14,6 +14,9 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 @Service
 @RequiredArgsConstructor
 public class GoogleOAuth2Service {
@@ -50,7 +53,7 @@ public class GoogleOAuth2Service {
                         user.getId(),
                         user.getName(),
                         user.getEmail(),
-                        user.getRole()
+                        copyRoles(user)
                 )
         );
     }
@@ -76,7 +79,7 @@ public class GoogleOAuth2Service {
                 .avatarUrl(picture)
                 .passwordHash(null)
                 .authProvider(UserAuthProvider.GOOGLE)
-                .role(UserRole.CLIENT)
+                .roles(defaultClientRoles())
                 .active(true)
                 .emailVerified(true)
                 .build();
@@ -92,5 +95,13 @@ public class GoogleOAuth2Service {
         }
 
         return value;
+    }
+
+    private Set<UserRole> defaultClientRoles() {
+        return new LinkedHashSet<>(Set.of(UserRole.CLIENT));
+    }
+
+    private Set<UserRole> copyRoles(User user) {
+        return new LinkedHashSet<>(user.getRoles());
     }
 }

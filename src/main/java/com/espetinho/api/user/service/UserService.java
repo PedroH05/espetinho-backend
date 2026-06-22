@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashSet;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -38,7 +40,7 @@ public class UserService {
                 user.getId(),
                 user.getName(),
                 user.getEmail(),
-                user.getRole()
+                new LinkedHashSet<>(user.getRoles())
         );
     }
 }

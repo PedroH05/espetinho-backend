@@ -22,7 +22,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -48,7 +50,7 @@ public class AuthService {
                 .email(email)
                 .passwordHash(passwordEncoder.encode(request.password()))
                 .authProvider(UserAuthProvider.LOCAL)
-                .role(UserRole.CLIENT)
+                .roles(defaultClientRoles())
                 .active(true)
                 .emailVerified(true)
                 .build();
@@ -59,7 +61,7 @@ public class AuthService {
                 savedUser.getId(),
                 savedUser.getName(),
                 savedUser.getEmail(),
-                savedUser.getRole(),
+                copyRoles(savedUser),
                 savedUser.isEmailVerified()
         );
     }
@@ -90,7 +92,7 @@ public class AuthService {
                         user.getId(),
                         user.getName(),
                         user.getEmail(),
-                        user.getRole()
+                        copyRoles(user)
                 )
         );
     }
@@ -138,5 +140,13 @@ public class AuthService {
 
     private String normalizeEmail(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private Set<UserRole> defaultClientRoles() {
+        return new LinkedHashSet<>(Set.of(UserRole.CLIENT));
+    }
+
+    private Set<UserRole> copyRoles(User user) {
+        return new LinkedHashSet<>(user.getRoles());
     }
 }

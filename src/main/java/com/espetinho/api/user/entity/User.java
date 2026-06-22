@@ -2,13 +2,17 @@ package com.espetinho.api.user.entity;
 
 import com.espetinho.api.user.enums.UserAuthProvider;
 import com.espetinho.api.user.enums.UserRole;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -19,6 +23,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Getter
@@ -53,9 +59,12 @@ public class User {
     @Column(name = "auth_provider", nullable = false, length = 20)
     private UserAuthProvider authProvider;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
-    private UserRole role;
+    @Column(name = "role", nullable = false, length = 40)
+    @Builder.Default
+    private Set<UserRole> roles = new LinkedHashSet<>();
 
     @Column(nullable = false)
     private boolean active;

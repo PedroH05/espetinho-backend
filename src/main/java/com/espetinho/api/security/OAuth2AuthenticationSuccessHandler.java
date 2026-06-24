@@ -43,7 +43,7 @@ public class OAuth2AuthenticationSuccessHandler implements AuthenticationSuccess
             LoginResponse loginResponse = googleOAuth2Service.authenticate(oauth2User);
             String token = URLEncoder.encode(loginResponse.token(), StandardCharsets.UTF_8);
 
-            response.sendRedirect(normalizeUrl(frontendBaseUrl, googleSuccessPath) + "#token=" + token);
+            response.sendRedirect(normalizeUrl(frontendBaseUrl, googleSuccessPath) + "?token=" + token);
         } catch (BusinessException exception) {
             String error = URLEncoder.encode(exception.getMessage(), StandardCharsets.UTF_8);
             response.sendRedirect(normalizeUrl(frontendBaseUrl, googleFailurePath) + "?error=" + error);

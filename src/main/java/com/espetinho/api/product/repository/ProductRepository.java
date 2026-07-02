@@ -47,6 +47,18 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     Optional<Product> findPublicById(@Param("id") UUID id);
 
     @EntityGraph(attributePaths = {"imageUrls", "category"})
+    @Query("""
+            SELECT product
+            FROM Product product
+            JOIN product.category category
+            WHERE product.id = :id
+              AND product.active = true
+              AND product.available = true
+              AND category.active = true
+            """)
+    Optional<Product> findAvailableForCartById(@Param("id") UUID id);
+
+    @EntityGraph(attributePaths = {"imageUrls", "category"})
     @Query("SELECT product FROM Product product WHERE product.id = :id")
     Optional<Product> findDetailedById(@Param("id") UUID id);
 }

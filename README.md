@@ -278,7 +278,7 @@ GET /api/v1/auth/google
 4. Backend cria ou atualiza o usuario, gera o JWT e redireciona para o frontend:
 
 ```text
-http://localhost:3000/auth/google/callback#token=jwt_aqui
+http://localhost:3000/auth/google/callback?token=jwt_aqui
 ```
 
 Em producao, configure no Google Cloud o redirect URI:
@@ -409,6 +409,176 @@ Restaura o produto e marca como disponivel (`active=true` e `available=true`). E
 
 Remove o produto usando soft delete (`active=false`). O registro continua no banco para permitir recuperacao. Exige token de usuario `ADMIN`.
 
+### Carrinho `/api/v1/cart`
+
+O carrinho funciona tanto para usuario logado quanto para visitante.
+
+Para usuario logado:
+
+```text
+Authorization: Bearer <token>
+```
+
+Para visitante sem login, o frontend deve gerar um UUID e enviar em todas as chamadas:
+
+```text
+X-Guest-Id: 550e8400-e29b-41d4-a716-446655440000
+```
+
+Rotas:
+
+```text
+GET    /api/v1/cart
+POST   /api/v1/cart/items
+PUT    /api/v1/cart/items/{itemId}
+DELETE /api/v1/cart/items/{itemId}
+DELETE /api/v1/cart
+```
+
+Adicionar item:
+
+```json
+{
+  "productId": "uuid-do-produto",
+  "quantity": 2
+}
+```
+
+Alterar quantidade:
+
+```json
+{
+  "quantity": 3
+}
+```
+
+Resposta:
+
+```json
+{
+  "success": true,
+  "message": "Carrinho consultado com sucesso",
+  "data": {
+    "id": "uuid-do-carrinho",
+    "userId": null,
+    "guestId": "550e8400-e29b-41d4-a716-446655440000",
+    "items": [
+      {
+        "id": "uuid-do-item",
+        "productId": "uuid-do-produto",
+        "productName": "Espetinho de Carne",
+        "imageUrl": null,
+        "unitPrice": 9.90,
+        "quantity": 2,
+        "subtotal": 19.80,
+        "available": true
+      }
+    ],
+    "totalItems": 2,
+    "totalAmount": 19.80
+  }
+}
+```
+
+Se o produto ja existir no carrinho, `POST /api/v1/cart/items` soma a quantidade.
+
+### Pedidos `/api/v1/orders`
+
+Cria pedido a partir do carrinho ativo. Funciona com usuario logado ou visitante.
+
+Para visitante, enviar o mesmo header usado no carrinho:
+
+```text
+X-Guest-Id: 550e8400-e29b-41d4-a716-446655440000
+```
+
+Criar pedido de retirada:
+
+```text
+POST /api/v1/orders
+```
+
+```json
+{
+  "type": "PICKUP",
+  "customer": {
+    "name": "Pedro Henrique",
+    "phone": "12999999999",
+    "email": "usuario@email.com"
+  },
+  "notes": "Sem farofa"
+}
+```
+
+Criar pedido delivery:
+
+```json
+{
+  "type": "DELIVERY",
+  "customer": {
+    "name": "Pedro Henrique",
+    "phone": "12999999999",
+    "email": "usuario@email.com"
+  },
+  "deliveryAddress": {
+    "street": "Rua das Flores",
+    "number": "123",
+    "complement": "Casa",
+    "neighborhood": "Centro"
+  },
+  "notes": "Entregar no portao"
+}
+```
+
+Resposta:
+
+```json
+{
+  "success": true,
+  "message": "Pedido criado com sucesso",
+  "data": {
+    "id": "uuid-do-pedido",
+    "userId": null,
+    "guestId": "550e8400-e29b-41d4-a716-446655440000",
+    "customer": {
+      "name": "Pedro Henrique",
+      "phone": "12999999999",
+      "email": "usuario@email.com"
+    },
+    "type": "DELIVERY",
+    "status": "AWAITING_PAYMENT",
+    "deliveryAddress": {
+      "street": "Rua das Flores",
+      "number": "123",
+      "complement": "Casa",
+      "neighborhood": "Centro"
+    },
+    "items": [
+      {
+        "id": "uuid-do-item",
+        "productId": "uuid-do-produto",
+        "productName": "Espetinho de Carne",
+        "unitPrice": 9.90,
+        "quantity": 2,
+        "subtotal": 19.80
+      }
+    ],
+    "totalAmount": 19.80,
+    "createdAt": "2026-07-02T17:00:00Z"
+  }
+}
+```
+
+Consultar pedido:
+
+```text
+GET /api/v1/orders/{id}
+```
+
+Visitante deve enviar o mesmo `X-Guest-Id` usado na compra. Usuario logado deve enviar o JWT. `ADMIN` e `STAFF` podem consultar pedidos.
+
+Observacao: `DINE_IN` ja esta preparado no enum e no banco, mas ainda retorna erro porque mesas/QR Code serao implementados em uma etapa propria.
+
 Categoria e produto de teste para inserir pelo DBeaver ou Neon:
 
 ```sql
@@ -442,6 +612,9 @@ VALUES (
 - `/api/v1/staff/**` aceita `STAFF` ou `ADMIN`.
 - `GET /api/v1/categories/**` fica publico para filtros do cardapio.
 - `GET /api/v1/products/**` fica publico para o cardapio.
+- `/api/v1/cart/**` fica publico para permitir compra sem login. Visitantes devem enviar `X-Guest-Id`.
+- `POST /api/v1/orders` fica publico para permitir compra sem login. Visitantes devem enviar `X-Guest-Id`.
+- `GET /api/v1/orders/{id}` fica publico, mas o backend valida se o pedido pertence ao usuario logado ou ao `X-Guest-Id`.
 - Escrita em `/api/v1/products/**` exige `ADMIN` dentro de `roles`.
 - Demais rotas exigem JWT valido no header `Authorization: Bearer <token>`.
 

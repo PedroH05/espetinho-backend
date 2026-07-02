@@ -12,9 +12,25 @@ import java.util.UUID;
 
 public interface ProductRepository extends JpaRepository<Product, UUID> {
 
-    @EntityGraph(attributePaths = {"imageUrls", "category"})
+    @EntityGraph(attributePaths = {"category"})
     @Query("""
-            SELECT DISTINCT product
+            SELECT product
+            FROM Product product
+            JOIN product.category category
+            WHERE product.active = true
+              AND category.active = true
+              AND (:available IS NULL OR product.available = :available)
+              AND (:categoryId IS NULL OR category.id = :categoryId)
+            ORDER BY category.displayOrder ASC, category.name ASC, product.name ASC
+            """)
+    List<Product> findMenuProducts(
+            @Param("categoryId") UUID categoryId,
+            @Param("available") Boolean available
+    );
+
+    @EntityGraph(attributePaths = {"category"})
+    @Query("""
+            SELECT product
             FROM Product product
             JOIN product.category category
             WHERE product.active = true
@@ -22,14 +38,13 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
               AND (:available IS NULL OR product.available = :available)
               AND (:categoryId IS NULL OR category.id = :categoryId)
               AND (
-                    :search IS NULL
-                    OR LOWER(product.name) LIKE LOWER(CONCAT('%', :search, '%'))
+                    LOWER(product.name) LIKE LOWER(CONCAT('%', :search, '%'))
                     OR LOWER(product.description) LIKE LOWER(CONCAT('%', :search, '%'))
                     OR LOWER(category.name) LIKE LOWER(CONCAT('%', :search, '%'))
               )
             ORDER BY category.displayOrder ASC, category.name ASC, product.name ASC
             """)
-    List<Product> findMenuProducts(
+    List<Product> searchMenuProducts(
             @Param("search") String search,
             @Param("categoryId") UUID categoryId,
             @Param("available") Boolean available

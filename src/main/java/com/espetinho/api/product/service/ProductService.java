@@ -26,11 +26,12 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public ProductMenuResponse getMenu(String search, UUID categoryId, Boolean available) {
-        List<ProductResponse> products = productRepository.findMenuProducts(
-                        normalizeSearch(search),
-                        categoryId,
-                        available
-                )
+        String normalizedSearch = normalizeSearch(search);
+        List<Product> menuProducts = normalizedSearch == null
+                ? productRepository.findMenuProducts(categoryId, available)
+                : productRepository.searchMenuProducts(normalizedSearch, categoryId, available);
+
+        List<ProductResponse> products = menuProducts
                 .stream()
                 .map(this::toResponse)
                 .toList();
